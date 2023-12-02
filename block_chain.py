@@ -11,180 +11,225 @@ class Blockchain(object):
     difficulty_target = "0000"
     
     def hash_block(self, block):
-        block_encoded = json.dumps(block,sort_keys=True).encode()
+        block_encoded = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_encoded).hexdigest()
     
     def __init__(self):
         self.nodes = set()
-        # stores all the blocks in the entire blockchain
         self.chain = []
-        # temporarily stores the transactions for the
-        # current block
         self.current_transactions = []
-        # create the genesis block with a specific fixed hash
-        # of previous block genesis block starts with index 0
+        self.utxo_set = {}  # New: UTXO set to track unspent coins
+
         genesis_hash = self.hash_block("genesis_block")
         self.append_block(
-        hash_of_previous_block = genesis_hash,
-        nonce = self.proof_of_work(0, genesis_hash, [])
+            hash_of_previous_block=genesis_hash,
+            nonce=self.proof_of_work(0, genesis_hash, [])
         )
         
-    # use PoW to find the nonce for the current block
-    def proof_of_work(self, index, hash_of_previous_block,transactions):
-        # try with nonce = 0
+    def proof_of_work(self, index, hash_of_previous_block, transactions):
         nonce = 0
-        # try hashing the nonce together with the hash of the
-        # previous block until it is valid
-        while self.valid_proof(index, hash_of_previous_block,transactions, nonce) is False:
+        while self.valid_proof(index, hash_of_previous_block, transactions, nonce) is False:
             nonce += 1
         return nonce
     
     def valid_proof(self, index, hash_of_previous_block, transactions, nonce):
-        # create a string containing the hash of the previous
-        # block and the block content, including the nonce
         content = f'{index}{hash_of_previous_block}{transactions}{nonce}'.encode()
-        # hash using sha256
         content_hash = hashlib.sha256(content).hexdigest()
-        # check if the hash meets the difficulty target
         return content_hash[:len(self.difficulty_target)] == self.difficulty_target
     
-    # creates a new block and adds it to the blockchain
     def append_block(self, nonce, hash_of_previous_block):
         block = {
-        'index': len(self.chain),
-        'timestamp': time(),
-        'transactions': self.current_transactions,
-        'nonce': nonce,
-        'hash_of_previous_block': hash_of_previous_block
+            'index': len(self.chain),
+            'timestamp': time(),
+            'transactions': self.current_transactions,
+            'nonce': nonce,
+            'hash_of_previous_block': hash_of_previous_block
         }
-        # reset the current list of transactions
         self.current_transactions = []
-        # add the new block to the blockchain
         self.chain.append(block)
         return block
     
     def add_transaction(self, sender, recipient, amount):
-        self.current_transactions.append({
-        'amount': amount,
-        'recipient': recipient,
-        'sender': sender,
-        })
+
+        #Double Spending issue
+        current_transactions_amount = 0
+        if len(self.current_transactions) > 0:
+            for i in self.current_transactions:
+                current_transactions_amount = current_transactions_amount + i["amount"]
+
+
+        if sender != "0" and self.get_balance(sender) < (amount + current_transactions_amount):
+            return False  # Insufficient funds
+
+        transaction = {
+            'amount': amount,
+            'recipient': recipient,
+            'sender': sender,
+            'status': 'pending'
+        }
+
+            
+        self.current_transactions.append(transaction)
+
+
         return self.last_block['index'] + 1
     
+    def update_utxo_set_from_blockchain(self):
+        for block in self.chain:
+            transactions = block['transactions']
+            for transaction in transactions:
+                sender = transaction['sender']
+                recipient = transaction['recipient']
+                amount = transaction['amount']
+
+                if sender != "0":
+                    self.remove_from_utxo_set(sender, amount)
+                    self.add_to_utxo_set(recipient, amount)
+                elif sender == "0":
+                    self.add_to_utxo_set(recipient, amount)
+
+    def add_to_utxo_set(self, recipient, amount):
+        if recipient not in self.utxo_set:
+            self.utxo_set[recipient] = []
+        x=0
+        for utxo in self.utxo_set[recipient]:
+            if utxo['transaction_id'] == self.last_block['index']:
+                x=1
+        if x!=1 :
+            self.utxo_set[recipient].append({
+                'amount': amount,
+             'transaction_id': self.last_block['index'],
+            })
+
+    def remove_from_utxo_set(self, sender, amount):
+        if sender in self.utxo_set:
+        # Remove the UTXO associated with the spent amount
+            
+            print("before%s"%self.get_balance(sender))
+
+            items_to_remove = []
+
+            for utxo in self.utxo_set[sender]:
+                if utxo['amount'] <= amount:
+                    items_to_remove.append(utxo)
+                    amount -= utxo['amount']
+                else:
+                    utxo['amount'] -= amount
+                    amount = 0
+
+                if amount == 0:
+                    break
+
+        # Remove the items after the iteration
+            for item in items_to_remove:
+                self.utxo_set[sender].remove(item)
+
+    
+    def get_balance(self, address):
+        balance = 0
+        if address in self.utxo_set:
+        	for utxo in self.utxo_set[address]:
+                    balance += utxo['amount']
+        return balance
+    
+
     def add_node(self, address):
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
-        print(parsed_url.netloc)
     
-    # determine if a given blockchain is valid
     def valid_chain(self, chain):
-        last_block = chain[0] # the genesis block
-        current_index = 1 # starts with the second block
+        last_block = chain[0]
+        current_index = 1
         while current_index < len(chain):
             block = chain[current_index]
             if block['hash_of_previous_block'] != self.hash_block(last_block):
                 return False
- # check for valid nonce
-            if not self.valid_proof(current_index, block['hash_of_previous_block'], block['transactions'],block['nonce']):
+
+            if not self.valid_proof(current_index, block['hash_of_previous_block'], block['transactions'], block['nonce']):
                 return False
+
             last_block = block
             current_index += 1
-        # the chain is valid
+
         return True
+
     def update_blockchain(self):
-        # get the nodes around us that has been registered
         neighbours = self.nodes
         new_chain = None
-        # for simplicity, look for chains longer than ours
         max_length = len(self.chain)
-        # grab and verify the chains from all the nodes in our
-        # network
         for node in neighbours:
-            # get the blockchain from the other nodes
             response = requests.get(f'http://{node}/blockchain')
-            if response.status_code == 200: 
+            if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
-            # check if the length is longer and the chain
-            # is valid
-            if length > max_length and self.valid_chain(chain):
-                max_length = length
-                new_chain = chain
-        # replace our chain if we discovered a new, valid
-        # chain longer than ours
+
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+
         if new_chain:
             self.chain = new_chain
             return True
         return False
 
- 
     @property
     def last_block(self):
-        # returns the last block in the blockchain
         return self.chain[-1]
-    
+
 app = Flask(__name__)
-# generate a globally unique address for this node
 node_identifier = str(uuid4()).replace('-', "")
-# instantiate the Blockchain
 blockchain = Blockchain()
-# return the entire blockchain
+
 @app.route('/blockchain', methods=['GET'])
 def full_chain():
     response = {
-    'chain': blockchain.chain,
-    'length': len(blockchain.chain),
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain),
     }
     return jsonify(response), 200
 
 @app.route('/mine', methods=['GET'])
 def mine_block():
     blockchain.add_transaction(
-    sender="0",
-    recipient=node_identifier,
-    amount=1,
+        sender="0",
+        recipient=node_identifier,
+        amount=1,
     )
-    # obtain the hash of last block in the blockchain
     last_block_hash = blockchain.hash_block(blockchain.last_block)
-    # using PoW, get the nonce for the new block to be added
-    # to the blockchain
     index = len(blockchain.chain)
-    nonce = blockchain.proof_of_work(index, last_block_hash,
-    blockchain.current_transactions)
-    # add the new block to the blockchain using the last block
-    # hash and the current nonce
+    nonce = blockchain.proof_of_work(index, last_block_hash, blockchain.current_transactions)
     block = blockchain.append_block(nonce, last_block_hash)
     response = {
-    'message': "New Block Mined",
-    'index': block['index'],
-    'hash_of_previous_block':
-    block['hash_of_previous_block'],
-    'nonce': block['nonce'],
-    'transactions': block['transactions'],
+        'message': "New Block Mined",
+        'index': block['index'],
+        'hash_of_previous_block': block['hash_of_previous_block'],
+        'nonce': block['nonce'],
+        'transactions': block['transactions'],
     }
+    blockchain.update_utxo_set_from_blockchain()
     return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
-    # get the value passed in from the client
     values = request.get_json()
-    # check that the required fields are in the POST'ed data
     required_fields = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required_fields):
         return ('Missing fields', 400)
-    # create a new transaction
-    index = blockchain.add_transaction(
-    values['sender'],
-    values['recipient'],
-    values['amount']
+
+    success = blockchain.add_transaction(
+        values['sender'],
+        values['recipient'],
+        values['amount']
     )
-    response = {'message':
-    f'Transaction will be added to Block {index}'}
-    return (jsonify(response), 201)
+
+    if success is False:
+        return jsonify({'message': 'Transaction failed. Insufficient funds.'}), 400
+
+    response = {'message': f'Transaction will be added to Block {blockchain.last_block["index"]}'}
+    return jsonify(response), 201
 
 @app.route('/nodes/add_nodes', methods=['POST'])
 def add_nodes():
-    # get the nodes passed in from the client
     values = request.get_json()
     nodes = values.get('nodes')
     if nodes is None:
@@ -192,8 +237,8 @@ def add_nodes():
     for node in nodes:
         blockchain.add_node(node)
     response = {
-    'message': 'New nodes added',
-    'nodes': list(blockchain.nodes),
+        'message': 'New nodes added',
+        'nodes': list(blockchain.nodes),
     }
     return jsonify(response), 201
 
@@ -202,15 +247,24 @@ def sync():
     updated = blockchain.update_blockchain()
     if updated:
         response = {
-        'message':
-        'The blockchain has been updated to the latest',
-        'blockchain': blockchain.chain
+            'message': 'The blockchain has been updated to the latest',
+            'blockchain': blockchain.chain
         }
     else:
         response = {
-        'message': 'Our blockchain is the latest',
-        'blockchain': blockchain.chain
+            'message': 'Our blockchain is the latest',
+            'blockchain': blockchain.chain
         }
+    blockchain.update_utxo_set_from_blockchain()
     return jsonify(response), 200
+
+
+@app.route('/balance', methods=['POST'])
+def balance():
+    value = request.get_json()
+    
+    balance = blockchain.get_balance(value['sender'])
+    return jsonify(balance), 200
+
 if __name__ == '__main__':
- app.run(host='0.0.0.0', port=int(sys.argv[1]))
+    app.run(host='0.0.0.0', port=int(sys.argv[1]))
