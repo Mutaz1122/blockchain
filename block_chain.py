@@ -207,6 +207,8 @@ def mine_block():
         'transactions': block['transactions'],
     }
     blockchain.update_utxo_set_from_blockchain()
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET'
     return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])
