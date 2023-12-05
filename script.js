@@ -1,20 +1,56 @@
 const balanceDisplay = document.getElementById('balance-display');
 
-async function getBalance() {
-  const senderAddress = prompt('Enter your address:');
-  if (!senderAddress) return;
 
+async function address() {
+  x = document.getElementById("nodeAddress").value;
   try {
-    const response = await fetch('localhost:5000/balance', {
+    const response = await fetch(`http://127.0.0.1:${x}/blockchain`, {
+      method: 'GET',
+      mode: 'no-cors'
+    });
+    localStorage.setItem("address", x);
+    window.location.replace("HomePage.html");
+  }
+  catch (e){
+    alert(e)
+  }
+}
+
+async function loadPage(){
+  document.getElementById("nodeNumber").innerHTML = localStorage.getItem("address");
+  try{
+  const responseAddress = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/mine`, {
+      method: 'GET',
+      mode: 'cors'
+    
+    });
+    const data = await responseAddress.json();
+    localStorage.setItem("senderAddress",data["transactions"][0]["recipient"]);
+  }
+    catch (error) {
+      console.error(error);
+      alert('Error getting address');
+    }
+}
+
+async function getBalance() {
+
+  senderAddress = localStorage.getItem("senderAddress");
+  if (!senderAddress) return;
+  try {
+    const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/balance`, {
       method: 'POST',
       body: JSON.stringify({ sender: senderAddress }),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        mode: 'cors',
+        "Access-Control-Allow-Origin": `*`
+
       }
     });
 
     const balance = await response.json();
-    balanceDisplay.value = balance;
+    document.getElementById("balanceDisplay").innerHTML = balance;
   } catch (error) {
     console.error(error);
     alert('Error getting balance');
@@ -24,16 +60,12 @@ async function getBalance() {
 async function mineBlock() {
 
   try {
-    const response = await fetch('http://localhost:5000/mine', {
+    const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/mine`, {
       method: 'GET',
-      mode: 'no-cors'
+      mode: 'cors'
     
     });
 
-    setTimeout(async () => {
-        // Your code to run after 1 second
-      
-      }, 1000); 
       const data = await response.text();
         alert(data);
     // if (data.message === 'New Block Mined') {

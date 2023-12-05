@@ -6,6 +6,8 @@ from uuid import uuid4
 from flask import Flask, jsonify, request
 import requests
 from urllib.parse import urlparse
+from flask_cors import CORS
+
 
 class Blockchain(object):
     difficulty_target = "0000"
@@ -177,6 +179,7 @@ class Blockchain(object):
         return self.chain[-1]
 
 app = Flask(__name__)
+CORS(app)
 node_identifier = str(uuid4()).replace('-', "")
 blockchain = Blockchain()
 
@@ -207,8 +210,6 @@ def mine_block():
         'transactions': block['transactions'],
     }
     blockchain.update_utxo_set_from_blockchain()
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET'
     return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])

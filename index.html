@@ -10,31 +10,14 @@
   <div class="container">
     <h1>Blockchain Wallet</h1>
     <div class="balance">
-      <h2>Balance</h2>
-      <input type="text" id="balance-display" readonly>
-      <button onclick="getBalance()">Get Balance</button>
-    </div>
-    <div class="mining">
-      <h2>Mine Block</h2>
-      <button onclick="mineBlock()">Mine</button>
+      <h2>Welcome</h2>
+      
     </div>
     <div class="transaction">
-      <h2>Make Transaction</h2>
-      <form action="/transactions/new" method="POST" id="transaction-form">
-        <label for="recipient">Recipient Address:</label>
-        <input type="text" name="recipient" id="recipient-address" required>
-        <label for="amount">Amount:</label>
-        <input type="number" name="amount" id="transaction-amount" required>
-        <button type="submit">Send</button>
-      </form>
-    </div>
-    <div class="nodes">
-      <h2>Nodes</h2>
-      <button onclick="addNodes()">Add Nodes</button>
-    </div>
-    <div class="sync">
-      <h2>Sync</h2>
-      <button onclick="syncBlockchain()">Sync</button>
+      <h2>Enter Your Short Address (Port Number)</h2>
+        <label for="recipient">Short Address:</label>
+        <input type="text" name="Address" id="nodeAddress" required>
+       <button onclick="address()" type="submit" id="send">Send</button>
     </div>
   </div>
   <script src="script.js"></script>
