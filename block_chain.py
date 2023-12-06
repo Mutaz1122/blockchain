@@ -16,7 +16,7 @@ class Blockchain(object):
         block_encoded = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_encoded).hexdigest()
     
-    def __init__(self):
+    def __init__(self, node_identifier):
         self.nodes = set()
         self.chain = []
         self.current_transactions = []
@@ -27,6 +27,14 @@ class Blockchain(object):
             hash_of_previous_block=genesis_hash,
             nonce=self.proof_of_work(0, genesis_hash, [])
         )
+        transaction = {
+            'amount': 10,
+            'recipient': node_identifier,
+            'sender':node_identifier
+        }
+
+            
+        self.current_transactions.append(transaction)
         
     def proof_of_work(self, index, hash_of_previous_block, transactions):
         nonce = 0
@@ -60,7 +68,7 @@ class Blockchain(object):
                 current_transactions_amount = current_transactions_amount + i["amount"]
 
 
-        if sender != "0" and self.get_balance(sender) < (amount + current_transactions_amount):
+        if sender == recipient and self.get_balance(sender) < (amount + current_transactions_amount):
             return False  # Insufficient funds
 
         transaction = {
@@ -180,8 +188,9 @@ class Blockchain(object):
 
 app = Flask(__name__)
 CORS(app)
+
 node_identifier = str(uuid4()).replace('-', "")
-blockchain = Blockchain()
+blockchain = Blockchain(node_identifier)
 
 @app.route('/blockchain', methods=['GET'])
 def full_chain():
@@ -194,7 +203,7 @@ def full_chain():
 @app.route('/mine', methods=['GET'])
 def mine_block():
     blockchain.add_transaction(
-        sender="0",
+        sender=node_identifier,
         recipient=node_identifier,
         amount=1,
     )
