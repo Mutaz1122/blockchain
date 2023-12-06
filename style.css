@@ -28,8 +28,8 @@ body {
   .container {
     max-width: 400px;
   }
-  .sections-container .balance, .mining, .transaction, .nodes, .sync {
-    width: 100%;
+  .sections-container .info, .mining, .transaction, .nodes, .sync {
+    /* width: 100%;  */
   }
 }
 
@@ -60,7 +60,7 @@ h2 {
 }
 
 /* Individual sections */
-.balance, .mining, .transaction, .nodes, .sync {
+.info, .mining, .transaction, .nodes, .sync {
   flex: 1; /* Equal width for all boxes */
   background-color: #f7f9fe;
   padding: 10px;
@@ -72,13 +72,14 @@ h2 {
   .sections-container {
     gap: 5px; /* Adjust padding for smaller screens */
   }
-  .sections-container .balance, .mining, .transaction, .nodes, .sync {
+  .sections-container .info, .mining, .transaction, .nodes, .sync {
     flex-basis: 100%; /* Full width on smaller screens */
   }
 }
 
 /* Balance section */
-.balance {
+.info {
+  width: 80%;
   background-color: #f7992f;
   color: #fff;
 }
@@ -120,7 +121,7 @@ input, select {
 }
 
 #recipient-address {
-  placeholder: "Enter recipient's address...";
+ width: 25rem;
 }
 
 #transaction-amount {
@@ -157,3 +158,12 @@ button:hover, #send:hover{
   color: red;
 }
 
+.grid {
+  width: 80%;
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 40px 10px;
+  background-color: #f7992f;
+  padding: 5px;
+}

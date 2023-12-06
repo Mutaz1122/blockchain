@@ -67,7 +67,6 @@ class Blockchain(object):
             'amount': amount,
             'recipient': recipient,
             'sender': sender,
-            'status': 'pending'
         }
 
             
@@ -87,8 +86,9 @@ class Blockchain(object):
                 if sender != "0":
                     self.remove_from_utxo_set(sender, amount)
                     self.add_to_utxo_set(recipient, amount)
-                elif sender == "0":
+                if sender == "0":
                     self.add_to_utxo_set(recipient, amount)
+                    print("added")
 
     def add_to_utxo_set(self, recipient, amount):
         if recipient not in self.utxo_set:
@@ -211,6 +211,10 @@ def mine_block():
     }
     blockchain.update_utxo_set_from_blockchain()
     return jsonify(response), 200
+
+@app.route('/address', methods=['GET'])
+def getAddress():
+    return node_identifier, 200
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():

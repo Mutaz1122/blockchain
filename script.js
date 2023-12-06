@@ -16,16 +16,18 @@ async function address() {
   }
 }
 
+
 async function loadPage(){
   document.getElementById("nodeNumber").innerHTML = localStorage.getItem("address");
   try{
-  const responseAddress = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/mine`, {
+  const responseAddress = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/address`, {
       method: 'GET',
       mode: 'cors'
     
     });
-    const data = await responseAddress.json();
-    localStorage.setItem("senderAddress",data["transactions"][0]["recipient"]);
+    const data = await responseAddress.text();
+    localStorage.setItem("senderAddress",data);
+    getBalance()
   }
     catch (error) {
       console.error(error);
@@ -68,6 +70,7 @@ async function mineBlock() {
 
       const data = await response.text();
         alert(data);
+        loadPage()
     // if (data.message === 'New Block Mined') {
     //   alert('Block mined successfully!');
     //   updateBlockchainUI(); // Update balance and transactions after mining
@@ -89,15 +92,15 @@ transactionForm.addEventListener('submit', async (event) => {
   const transactionAmount = document.getElementById('transaction-amount').value;
 
   try {
-    const response = await fetch('localhost:5000/transactions/new', {
+    const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/transactions/new`, {
       method: 'POST',
-      body: JSON.stringify({ recipient: recipientAddress, amount: transactionAmount }),
+      body: JSON.stringify({sender: localStorage.getItem("senderAddress").toString(), recipient: recipientAddress, amount: parseInt(transactionAmount) }),
       headers: {
         'Content-Type': 'application/json'
       }
     });
 
-    const data = await response.json();
+    const data = await response.text();
     if (data.message === 'Transaction successful') {
       alert('Transaction sent successfully!');
       updateBlockchainUI(); // Update balance and transactions after sending transaction
