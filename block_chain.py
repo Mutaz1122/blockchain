@@ -30,7 +30,7 @@ class Blockchain(object):
         transaction = {
             'amount': 10,
             'recipient': node_identifier,
-            'sender':node_identifier
+            'sender':"gift"
         }
 
             
@@ -135,13 +135,33 @@ class Blockchain(object):
                 self.utxo_set[sender].remove(item)
 
     
-    def get_balance(self, address):
-        balance = 0
-        if address in self.utxo_set:
-        	for utxo in self.utxo_set[address]:
-                    balance += utxo['amount']
-        return balance
+    # def get_balance(self, address):
+    #     balance = 0
+    #     if address in self.utxo_set:
+    #     	for utxo in self.utxo_set[address]:
+    #                 balance += utxo['amount']
+    #     return balance
     
+    def getBalance(self, blockchain, node_address):
+        
+        balance = 0
+
+        for block in blockchain:
+            print(block["transactions"])
+
+            for transaction in block["transactions"]:
+                print(transaction)
+                if len(transaction) == 0:
+                    print(transaction)
+
+                else:
+                    
+                    if transaction["sender"] == node_address:
+                        balance -= transaction["amount"]
+                    if transaction["recipient"] == node_address:
+                        balance += transaction["amount"]
+
+        return balance
 
     def add_node(self, address):
         parsed_url = urlparse(address)
@@ -203,7 +223,7 @@ def full_chain():
 @app.route('/mine', methods=['GET'])
 def mine_block():
     blockchain.add_transaction(
-        sender=node_identifier,
+        sender="Mine",
         recipient=node_identifier,
         amount=1,
     )
@@ -279,7 +299,7 @@ def sync():
 def balance():
     value = request.get_json()
     
-    balance = blockchain.get_balance(value['sender'])
+    balance = blockchain.getBalance(blockchain.chain,node_identifier)
     return jsonify(balance), 200
 
 if __name__ == '__main__':
