@@ -298,8 +298,7 @@ def sync():
 @app.route('/balance', methods=['POST'])
 def balance():
     value = request.get_json()
-    
-    balance = blockchain.getBalance(blockchain.chain,node_identifier)
+    balance = blockchain.getBalance(blockchain.chain, value['sender'])
     return jsonify(balance), 200
 
 if __name__ == '__main__':
