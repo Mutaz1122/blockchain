@@ -41,8 +41,7 @@ async function getBalance() {
   if (!senderAddress) return;
   try {
     const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/balance`, {
-      method: 'POST',
-      body: JSON.stringify({ sender: senderAddress }),
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         mode: 'cors',
@@ -55,7 +54,7 @@ async function getBalance() {
     document.getElementById("balanceDisplay").innerHTML = balance;
   } catch (error) {
     console.error(error);
-    alert('Error getting balance');
+    alert(error);
   }
 }
 
@@ -101,7 +100,7 @@ transactionForm.addEventListener('submit', async (event) => {
     });
 
     const data = await response.text();
-    if (data.message === 'Transaction successful') {
+    if (response.ok ) {
       alert('Transaction sent successfully!');
       updateBlockchainUI(); // Update balance and transactions after sending transaction
       transactionForm.reset(); // Clear transaction form after successful submission
@@ -128,4 +127,50 @@ async function updateBlockchainUI() {
 
 // Add additional functionalities based on backend capabilities
 
-// ...
+async function Block() {
+  try {
+    const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/blockchain`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.text();
+    alert(data)
+    console.log('Add Nodes Response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error adding nodes:', error.message);
+  }
+}
+
+async function syncBlockchain() {
+  try {
+    const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/nodes/sync`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        mode: 'cors',
+        "Access-Control-Allow-Origin": `*`
+
+      }
+    });
+    // const responseText = await response.text();
+    // alert(responseText);
+    if (!response.ok) {
+      alert(response.status)
+    }
+
+
+    // console.log('Sync Blockchain Response:', data);
+    // return data;
+  } catch (error) {
+    alert(error);
+  }
+}
+
+

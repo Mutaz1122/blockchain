@@ -244,6 +244,7 @@ def new_transaction():
 def add_nodes():
     values = request.get_json()
     nodes = values.get('nodes')
+    print(nodes)
     if nodes is None:
         return "Error: Missing node(s) info", 400
     for node in nodes:
@@ -268,7 +269,7 @@ def sync():
             'blockchain': blockchain.chain
         }
     blockchain.update_utxo_set_from_blockchain()
-    return jsonify(response), 200
+    return jsonify(response), 200, {'Content-Type': 'application/json'}
 
 
 @app.route('/balance', methods=['GET'])
