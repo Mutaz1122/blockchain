@@ -93,7 +93,7 @@ transactionForm.addEventListener('submit', async (event) => {
   try {
     const response = await fetch(`http://127.0.0.1:${localStorage.getItem("address")}/transactions/new`, {
       method: 'POST',
-      body: JSON.stringify({sender: localStorage.getItem("senderAddress").toString(), recipient: recipientAddress, amount: parseInt(transactionAmount) }),
+      body: JSON.stringify({ recipient: recipientAddress, amount: parseInt(transactionAmount) }),
       headers: {
         'Content-Type': 'application/json'
       }

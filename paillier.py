@@ -7,6 +7,10 @@ app = Flask(__name__)
 # Generate Paillier key pair
 public_key, private_key = paillier.generate_paillier_keypair(n_length=2048)
 
+
+# Generate the corresponding private key
+private_key = paillier.PaillierPrivateKey(public_key2, p=fixed_p, q=fixed_q)
+
 @app.route('/encrypt/<int:x>', methods=['GET'])
 def encrypt(x):
     encrypted_x = public_key.encrypt(x)
@@ -26,6 +30,14 @@ def add():
     encrypted_sum = encrypted_x + encrypted_y
     decrypted_sum = private_key.decrypt(encrypted_sum)
     return jsonify({'result': decrypted_sum})
+@app.route('/get_key_params', methods=['GET'])
+def get_key_params():
+    key_params = {
+        'n': public_key.n,
+        'p': public_key.p,
+        'q': public_key.q
+    }
+    return jsonify(key_params)
 
 
 if __name__ == '__main__':
