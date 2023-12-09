@@ -66,9 +66,18 @@ class Blockchain(object):
 
         if sender != "0" and self.get_balance(sender) < (amount + current_transactions_amount):
             return False  # Insufficient funds
+        
+        
+        server_url = f"http://127.0.0.1:5005/encrypt/{amount}"
+
+        response = requests.get(server_url)
+
+        res = response.json()
+        Encrypted_amount = res['encrypted_x']
 
         transaction = {
             'amount': amount,
+            'Encrypted_amount':Encrypted_amount,
             'recipient': recipient,
             'sender': sender,
         }
@@ -275,7 +284,15 @@ def sync():
 @app.route('/balance', methods=['GET'])
 def balance():
     balance = blockchain.get_balance(node_identifier)
-    return jsonify(balance), 200
+    server_url = f"http://127.0.0.1:5005/encrypt/{balance}"
+    response = requests.get(server_url)
+    res = response.json()
+    Encrypted_amount = res['encrypted_x']
+    response={
+        'balance':balance,
+        'Encrypted_balance':Encrypted_amount
+    }
+    return jsonify(response), 200
 
 @app.route('/address', methods=['GET'])
 def address():

@@ -1,3 +1,5 @@
+
+
 const balanceDisplay = document.getElementById('balance-display');
 
 
@@ -51,7 +53,10 @@ async function getBalance() {
     });
 
     const balance = await response.json();
-    document.getElementById("balanceDisplay").innerHTML = balance;
+    var balance1=balance['balance']
+    document.getElementById("balanceDisplay").innerHTML = balance1;
+
+   
   } catch (error) {
     console.error(error);
     alert(error);
@@ -172,5 +177,13 @@ async function syncBlockchain() {
     alert(error);
   }
 }
+
+// In your script.js file
+
+
+
+
+
+
 
 
