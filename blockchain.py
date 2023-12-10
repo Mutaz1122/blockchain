@@ -23,6 +23,8 @@ class Blockchain(object):
         self.chain = []
         self.current_transactions = []
         self.utxo_set = {}  # New: UTXO set to track unspent coins
+        self.removalTime = {} 
+
         genesis_hash = "001bc7e14ac8df3721cba0a5bef89e1e5c51ca29e20eabacd59d83e94c5f2b"
         timestamp = time()
         self.append_block(
@@ -56,20 +58,20 @@ class Blockchain(object):
         return block
     
     def add_transaction(self, sender, recipient, amount):
+        Encrypted_amount = self.encrypte(amount)
 
         #Double Spending issue
-        current_transactions_amount = 0
+        current_transactions_amount = self.encrypte(0)
         if len(self.current_transactions) > 0:
             for i in self.current_transactions:
-                current_transactions_amount = current_transactions_amount + i["amount"]
+                current_transactions_amount = self.add(current_transactions_amount , i["Encrypted_amount"])
 
 
-        if sender != "0" and self.get_balance(sender) < (amount + current_transactions_amount):
+        if sender != "0" and self.decrypte(self.get_balance(sender)) < self.decrypte(self.add(Encrypted_amount , current_transactions_amount)):
             return False  # Insufficient funds
 
-        Encrypted_amount = self.encrypte(amount)
         transaction = {
-            'amount': amount,
+            # 'amount': amount,
             'Encrypted_amount':Encrypted_amount,
             'recipient': recipient,
             'sender': sender,
@@ -84,46 +86,56 @@ class Blockchain(object):
     def update_utxo_set_from_blockchain(self):
         for block in self.chain:
             transactions = block['transactions']
+            trans_id = block['index']
+            order = 0
             for transaction in transactions:
                 sender = transaction['sender']
                 recipient = transaction['recipient']
-                amount = transaction['amount']
+                Encrypted_amount = transaction['Encrypted_amount']
+                if sender not in self.removalTime:
+                    self.removalTime[sender] = self.encrypte(0)
 
                 if sender != "0":
-                    self.remove_from_utxo_set(sender, amount)
-                    self.add_to_utxo_set(recipient, amount)
+                    self.removalTime[sender] =  self.add(Encrypted_amount,self.removalTime[sender] )
+                    self.remove_from_utxo_set(sender, self.removalTime[sender])
+                    self.add_to_utxo_set(recipient, Encrypted_amount,order, trans_id)
                 elif sender == "0":
-                    #print(sender)
-                    self.add_to_utxo_set(recipient, amount)
+                    self.add_to_utxo_set(recipient, Encrypted_amount,order, trans_id)
+                order += 1
+        for i in self.removalTime:
+            self.removalTime[i] = self.encrypte(0)
 
-    def add_to_utxo_set(self, recipient, amount):
+    def add_to_utxo_set(self, recipient, Encrypted_amount, order, trans_id):
+
         if recipient not in self.utxo_set:
             self.utxo_set[recipient] = []
+            
         x=0
         for utxo in self.utxo_set[recipient]:
-            if utxo['transaction_id'] == self.last_block['index']:
+            if utxo['transaction_id'] == self.last_block['index'] or (utxo['transaction_id'] == trans_id and utxo['order'] == order):
                 x=1
         if x!=1:
             self.utxo_set[recipient].append({
                 'status':"ok",
-                'amount': amount,
-             'transaction_id': self.last_block['index'],
+                'Encrypted_amount': Encrypted_amount,
+                'transaction_id': self.last_block['index'],
+                'order' : order
             })
 
-    def remove_from_utxo_set(self, sender, amount):
+    def remove_from_utxo_set(self, sender, Encrypted_amount):
+        # Encrypted_amount = self.encrypte(amount)
+
         if sender in self.utxo_set:
         # Remove the UTXO associated with the spent amount
             #items_to_remove = []
-
             for utxo in self.utxo_set[sender]:
-                if utxo['amount'] <= amount:
+                if self.decrypte(utxo['Encrypted_amount']) <= self.decrypte(Encrypted_amount):
                     utxo["status"] = 'deleted'
-                    amount -= utxo["amount"]
+                    Encrypted_amount = self.sub(Encrypted_amount , utxo["Encrypted_amount"])
                 else:
-                    utxo['amount'] -= amount
-                    amount = 0
-
-                if amount == 0:
+                    utxo['Encrypted_amount'] =  self.sub(utxo['Encrypted_amount'] , Encrypted_amount)
+                    Encrypted_amount = self.encrypte(0)
+                if self.decrypte(Encrypted_amount) == 0:
                     break
 
         # # Remove the items after the iteration
@@ -133,12 +145,15 @@ class Blockchain(object):
 
     
     def get_balance(self, address):
-        balance = 0
+        balance = self.encrypte(0)
         if address in self.utxo_set:
         	for utxo in self.utxo_set[address]:
                     if utxo['status'] == "ok":
-                        balance += utxo['amount']
+                        print(utxo['Encrypted_amount'])
+                        print(balance)
+                        balance = self.add(balance , utxo['Encrypted_amount'])
         return balance
+    
     
 
     def add_node(self, address):
@@ -170,10 +185,8 @@ class Blockchain(object):
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
-            # print("valid")
-            # print(self.valid_chain(chain))
+                # and self.valid_chain(chain)
             if length > max_length:
-            # if length > max_length and self.valid_chain(chain):
                 max_length = length
                 new_chain = chain
 
@@ -199,6 +212,22 @@ class Blockchain(object):
         res = response.json()
         decrypted_amount = res['decrypted_x']
         return decrypted_amount
+    
+    def add(self, x, y):
+        url = f"http://127.0.0.1:5005/add"
+        data = {"x": x, "y": y}
+        response = requests.post(url, json=data)
+        res = response.json()
+        result = res['result']
+        return result
+    
+    def sub(self, x, y):
+        url = f"http://127.0.0.1:5005/sub"
+        data = {"x": x, "y": y}
+        response = requests.post(url, json=data)
+        res = response.json()
+        result = res['result']
+        return result
 
 
     @property
@@ -300,6 +329,7 @@ def sync():
 @app.route('/balance', methods=['GET'])
 def balance():
     balance = blockchain.get_balance(node_identifier)
+    balance = blockchain.decrypte(balance)
     return jsonify(balance), 200
 
 @app.route('/address', methods=['GET'])

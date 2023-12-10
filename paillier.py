@@ -28,8 +28,10 @@ def add():
     encrypted_x = paillier.EncryptedNumber(public_key, int(values["x"]))
     encrypted_y = paillier.EncryptedNumber(public_key, int(values["y"]))
     encrypted_sum = encrypted_x + encrypted_y
-    decrypted_sum = private_key.decrypt(encrypted_sum)
-    return jsonify({'result': decrypted_sum})
+    # decrypted_sum = private_key.decrypt(encrypted_sum)
+    result_ciphertext = encrypted_sum.ciphertext()
+
+    return jsonify({'result': result_ciphertext})
 
 @app.route('/sub', methods=['POST'])
 def sub():
@@ -37,8 +39,10 @@ def sub():
     encrypted_x = paillier.EncryptedNumber(public_key, int(values["x"]))
     encrypted_y = paillier.EncryptedNumber(public_key, int(values["y"]))
     encrypted_sub = encrypted_x - encrypted_y
-    decrypted_sub = private_key.decrypt(encrypted_sub)
-    return jsonify({'result': decrypted_sub})
+    # decrypted_sub = private_key.decrypt(encrypted_sub)
+    result_ciphertext = encrypted_sub.ciphertext()
+
+    return jsonify({'result': result_ciphertext})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5005)
