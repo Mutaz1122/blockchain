@@ -66,15 +66,8 @@ class Blockchain(object):
 
         if sender != "0" and self.get_balance(sender) < (amount + current_transactions_amount):
             return False  # Insufficient funds
-        
-        
-        server_url = f"http://127.0.0.1:5005/encrypt/{amount}"
 
-        response = requests.get(server_url)
-
-        res = response.json()
-        Encrypted_amount = res['encrypted_x']
-
+        Encrypted_amount = self.encrypte(amount)
         transaction = {
             'amount': amount,
             'Encrypted_amount':Encrypted_amount,
@@ -177,20 +170,42 @@ class Blockchain(object):
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
-
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain
+            # print("valid")
+            # print(self.valid_chain(chain))
+            if length > max_length:
+            # if length > max_length and self.valid_chain(chain):
+                max_length = length
+                new_chain = chain
 
         if new_chain:
             self.chain = new_chain
             return True
         return False
+    
+    def encrypte(self, x):
+        server_url = f"http://127.0.0.1:5005/encrypt/{x}"
+
+        response = requests.get(server_url)
+
+        res = response.json()
+        Encrypted_amount = res['encrypted_x']
+        return Encrypted_amount
+    
+    def decrypte(self, x):
+        server_url = f"http://127.0.0.1:5005/decrypt/{x}"
+
+        response = requests.get(server_url)
+
+        res = response.json()
+        decrypted_amount = res['decrypted_x']
+        return decrypted_amount
+
 
     @property
     def last_block(self):
         return self.chain[-1]
-
+    
+    
 app = Flask(__name__)
 CORS(app)
 node_identifier = str(uuid4()).replace('-', "")
@@ -253,7 +268,7 @@ def new_transaction():
 def add_nodes():
     values = request.get_json()
     nodes = values.get('nodes')
-    print(nodes)
+    # print(nodes)
     if nodes is None:
         return "Error: Missing node(s) info", 400
     for node in nodes:
@@ -267,6 +282,7 @@ def add_nodes():
 @app.route('/nodes/sync', methods=['GET'])
 def sync():
     updated = blockchain.update_blockchain()
+    print(updated)
     if updated:
         response = {
             'message': 'The blockchain has been updated to the latest',
@@ -284,15 +300,7 @@ def sync():
 @app.route('/balance', methods=['GET'])
 def balance():
     balance = blockchain.get_balance(node_identifier)
-    server_url = f"http://127.0.0.1:5005/encrypt/{balance}"
-    response = requests.get(server_url)
-    res = response.json()
-    Encrypted_amount = res['encrypted_x']
-    response={
-        'balance':balance,
-        'Encrypted_balance':Encrypted_amount
-    }
-    return jsonify(response), 200
+    return jsonify(balance), 200
 
 @app.route('/address', methods=['GET'])
 def address():

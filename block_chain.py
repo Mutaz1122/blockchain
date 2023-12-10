@@ -205,6 +205,24 @@ class Blockchain(object):
     @property
     def last_block(self):
         return self.chain[-1]
+    
+    def encrypte(x):
+        server_url = f"http://127.0.0.1:5005/encrypt/{x}"
+
+        response = requests.get(server_url)
+
+        res = response.json()
+        Encrypted_amount = res['encrypted_x']
+        return Encrypted_amount
+    
+    def decrypte(x):
+        server_url = f"http://127.0.0.1:5005/encrypt/{x}"
+
+        response = requests.get(server_url)
+
+        res = response.json()
+        decrypted_amount = res['decrypted_x']
+        return decrypted_amount
 
 app = Flask(__name__)
 CORS(app)

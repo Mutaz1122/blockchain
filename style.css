@@ -108,3 +108,15 @@ h1, h2 {
     width: 90%;
   }
 }
+#title{
+  background-color: #f7992f;
+  height: 100px;
+  padding: 25px;
+  align-content: center;
+  margin-top: 5px;
+  }
+  
+  #blocks{
+    padding: 20px;
+    background-color: antiquewhite;
+  }

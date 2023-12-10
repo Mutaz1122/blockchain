@@ -1,5 +1,3 @@
-
-
 const balanceDisplay = document.getElementById('balance-display');
 
 
@@ -53,10 +51,7 @@ async function getBalance() {
     });
 
     const balance = await response.json();
-    var balance1=balance['balance']
-    document.getElementById("balanceDisplay").innerHTML = balance1;
-
-   
+    document.getElementById("balanceDisplay").innerHTML = balance;
   } catch (error) {
     console.error(error);
     alert(error);
@@ -144,8 +139,9 @@ async function Block() {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const data = await response.text();
-    alert(data)
+    const data = await response.json();
+    localStorage.setItem("bc",JSON.stringify(data, null, Number.POSITIVE_INFINITY))
+    window.location.replace("Blocks.html")
     console.log('Add Nodes Response:', data);
     return data;
   } catch (error) {
@@ -169,21 +165,19 @@ async function syncBlockchain() {
     if (!response.ok) {
       alert(response.status)
     }
-
-
     // console.log('Sync Blockchain Response:', data);
     // return data;
   } catch (error) {
     alert(error);
   }
 }
+function loadBlocks() {
+  document.getElementById('blocks').innerHTML = localStorage.getItem("bc")
+  
+}
 
-// In your script.js file
-
-
-
-
-
-
+function back(){
+  window.location.replace("HomePage.html")
+}
 
 
