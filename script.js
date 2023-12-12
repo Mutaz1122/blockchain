@@ -67,8 +67,8 @@ async function mineBlock() {
     
     });
 
-      const data = await response.text();
-        alert(data);
+      const data = await response.json();
+        alert(JSON.stringify(data, null, Number.POSITIVE_INFINITY));
         loadPage()
     // if (data.message === 'New Block Mined') {
     //   alert('Block mined successfully!');
@@ -138,9 +138,10 @@ async function Block() {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-
-    const data = await response.json();
-    localStorage.setItem("bc",JSON.stringify(data, null, Number.POSITIVE_INFINITY))
+    const data = await response.text();
+    json = data.replace(/([\[:])?([\d\.]+)([,\}\]])/g, "$1\"$2\"$3");
+    json = JSON.parse(json);
+    localStorage.setItem("bc",JSON.stringify(json, null, Number.POSITIVE_INFINITY))
     window.location.replace("Blocks.html")
     console.log('Add Nodes Response:', data);
     return data;

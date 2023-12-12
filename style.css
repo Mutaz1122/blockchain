@@ -81,7 +81,7 @@ h1, h2 {
   margin-top: 10px;
 }
 
-.mining button, .nodes button, .sync button {
+.mining button, .nodes button, .sync button, #titleButton{
   background-color: #42936d;
   color: white;
   padding: 10px 20px;
@@ -109,14 +109,21 @@ h1, h2 {
   }
 }
 #title{
-  background-color: #f7992f;
+  background-color: #0095ff;
   height: 100px;
   padding: 25px;
   align-content: center;
   margin-top: 5px;
   }
+
+  #titleWhite{
+    color: white;
+  }
   
   #blocks{
     padding: 20px;
-    background-color: antiquewhite;
+    background-color: #ddd;
+    word-break: break-word;
+   white-space: pre-wrap;
+   -moz-white-space: pre-wrap;
   }

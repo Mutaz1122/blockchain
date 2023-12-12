@@ -71,7 +71,7 @@ class Blockchain(object):
             return False  # Insufficient funds
 
         transaction = {
-            # 'amount': amount,
+            'amount': amount,
             'Encrypted_amount':Encrypted_amount,
             'recipient': recipient,
             'sender': sender,
